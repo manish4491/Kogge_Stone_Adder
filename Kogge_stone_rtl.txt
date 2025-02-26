@@ -1,0 +1,204 @@
+/////////////////////////////////////////////////// DOT OPERATOR
+
+module dot_operator(input g_i, input g_i_minus_one, input p_i, input p_i_minus_one, output g_range, output p_range);
+
+    assign g_range = (((g_i_minus_one) & (p_i)) | (g_i));
+    and(p_range,p_i,p_i_minus_one);
+
+endmodule
+
+////////////////////////////////////////////////////RECTANGLE OPERATOR
+
+module rectangle_operator(input a_in, input b_in, output wire g, output wire p);
+
+    assign g = (a_in & b_in);
+    xor(p,a_in,b_in);
+
+endmodule
+
+///////////////////////////////////////////////////TRIANGLE OPERATOR
+
+module triangle_operator(input g_r, input p_r, input c_minus_one, output c);
+
+    assign c = ((g_r ) | (p_r & c_minus_one));
+    
+endmodule
+
+////////////////////////////////////////////////// 1 BIT FULL ADDER
+
+module full_adder(input in_1, input in_2, input carry_in, output s, output carry_out);
+
+    assign s = in_1 ^ in_2 ^ carry_in;
+    assign carry_out = (((in_1 ^ in_2) & carry_in) | (in_1 & in_2));
+
+endmodule
+
+////////////////////////////////////////////////// KOGGE STONE LOGIC
+
+    module kogge_stone_adder(a,b,c_in,co,gens,props,g1,p1,g2,p2,g3,p3,g4,p4,g5,p5,g6,p6,sum,c_final,c_out);
+
+    input wire [63:0] a;
+    input wire [63:0] b; 
+    input wire  c_in;
+    output wire [63:0]  c_final;
+    output wire [63:0]  co;
+    output wire [63:0]  gens;
+    output wire [63:0]  props;
+    output wire [63:0]  g1,p1;    //63:1
+    output wire [63:0]  g2,p2;    //63:2
+    output wire [63:0]  g3,p3;    //63:4
+    output wire [63:0]  g4,p4;    //63:8
+    output wire [63:0]  g5,p5;    //63:16
+    output wire [63:0]  g6,p6;    //63:32
+    output wire [63:0]  sum;
+    output c_out;
+
+    genvar i0;
+    generate
+        for (i0=63;i0>=0;i0=i0-1)     // 64 rectangle operators to generate individual generates and propagates.
+        begin
+            rectangle_operator rect_op(.a_in(a[i0]),.b_in(b[i0]),.g(gens[i0]),.p(props[i0]));
+        end
+    endgenerate    
+
+
+///////////////////////////////////////////////DOT OPERATOR LEVELS/////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////LEVEL 1
+    genvar i1;
+    generate
+        for (i1=63;i1>0;i1=i1-1)   // 63 dot operators
+        begin
+            dot_operator level_1(gens[i1],gens[i1-1],props[i1],props[i1-1],g1[i1],p1[i1]);   // gives 63:1
+        end
+    endgenerate
+
+    // assign the 0 bit value
+    assign g1[0] = gens[0];
+    assign p1[0] = props[0];
+
+///////////////////////////////////////////////LEVEL 2
+    genvar i2;
+    generate
+        for (i2=63;i2>1;i2=i2-1)   // 62 dot operators
+        begin
+            dot_operator level_2(g1[i2],g1[i2-2],p1[i2],p1[i2-2],g2[i2],p2[i2]);		//gives 63:2
+        end
+    endgenerate
+
+	// assign bit 1 to 0
+	genvar j;
+	generate
+		for (j = 1; j>=0 ; j=j-1)
+		begin
+			assign g2[j] = g1[j];
+			assign p2[j] = p1[j];
+		end
+	endgenerate
+
+
+///////////////////////////////////////////////LEVEL 3
+    genvar i3;
+    generate
+        for (i3=63;i3>3;i3=i3-1)   // 58 dot operators
+        begin
+            dot_operator level_3(g2[i3],g2[i3-4],p2[i3],p2[i3-4],g3[i3],p3[i3]);   // gives 63:4
+        end
+    endgenerate
+
+  // assign bit 3 to 0
+    genvar k;
+    generate
+	for (k=3;k>=0;k=k-1)
+	begin
+		assign g3[k] = g2[k];
+		assign p3[k] = p2[k];
+	end
+    endgenerate
+
+//////////////////////////////////////////////////LEVEL 4
+
+    genvar i4;
+    generate
+        for (i4=63;i4>7;i4=i4-1)   // 56 dot operators
+        begin
+            dot_operator level_4(g3[i4],g3[i4-8],p3[i4],p3[i4-8],g4[i4],p4[i4]);   // gives 63:8
+        end
+    endgenerate
+
+   // assign bit 7 to 0
+    genvar m;
+    generate
+	for (m=7;m>=0;m=m-1)
+	begin
+		assign g4 [m] = g3[m];
+		assign p4 [m] = p3[m];
+	end
+    endgenerate
+
+///////////////////////////////////////////////////LEVEL 5
+
+    genvar i5;
+    generate
+        for (i5=63;i5>15;i5=i5-1)  // 48 dot operators
+        begin
+            dot_operator level_5(g4[i5],g4[i5-16],p4[i5],p4[i5-16],g5[i5],p5[i5]);  // assigns 63: 16
+        end
+    endgenerate
+
+    //assign bit 15 to 0
+
+    genvar n;
+    generate
+	for (n=15;n>=0;n=n-1)
+	begin
+		assign g5[n] = g4[n];
+		assign p5[n] = p4[n];
+	end
+    endgenerate
+
+///////////////////////////////////////////////////LEVEL 6
+
+    genvar i6;
+    generate
+        for (i6=63;i6>31;i6=i6-1)  // 32 dot operators
+        begin
+            dot_operator level_6(g5[i6],g5[i6-32],p5[i6],p5[i6-32],g6[i6],p6[i6]);	// assigns 63:32
+        end
+    endgenerate
+
+    // assign 31 to 0
+    genvar o;
+    generate
+	for (o=31;o>=0;o=o-1)
+	begin
+		assign g6[o] = g5[o];
+		assign p6[o] = p5[o];
+	end
+    endgenerate
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////// TRIANGLE OPERATOR
+
+    genvar t;
+    generate
+        for (t=63;t>=0;t=t-1)  
+        begin
+            triangle_operator tri_op(g6[t],p6[t],c_in,c_final[t]);
+        end
+    endgenerate
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////// SUM
+    
+    genvar f;
+    generate
+            for (f=1;f<64;f=f+1)
+            begin
+                 full_adder fa (a[f],b[f],c_final[f-1],sum[f],co[f]);
+	    end
+    endgenerate
+		full_adder fa (a[0],b[0],c_in,sum[0],co[0]);
+
+    assign c_out = co[63];
+
+endmodule
