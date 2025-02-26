@@ -1,0 +1,41 @@
+module ksa_tb;
+
+	reg 	     c_in;
+	reg  [63:0]  a,b;
+	wire [63:0]  sum;
+	wire [63:0]  co;
+        wire [63:0]  c_final;
+    	wire [63:0]  gens;
+    	wire [63:0]  props;
+    	wire [63:1]  g1,p1;
+    	wire [63:2]  g2,p2;
+    	wire [63:6]  g3,p3;
+    	wire [63:8]  g4,p4;
+    	wire [63:16] g5,p5;
+    	wire [63:32] g6,p6;
+
+
+	//kogge_stone_adder k (.a(a),.b(b),.c_in(c_in),.sum(sum),.c_out(carry_out));
+	//kogge_stone_adder k (a,b,c_in,sum,carry_out);
+	kogge_stone_adder k(a,b,c_in,co,gens,props,g1,p1,g2,p2,g3,p3,g4,p4,g5,p5,g6,p6,sum,c_final,c_out);
+	initial
+	begin
+		#10;
+		 a = 64'd59;
+		 b = 64'd77;
+		 c_in = 1'd0;
+		
+		#10
+		 a = 64'd234;
+		 b = 64'd786;
+		 c_in = 1'd1;
+
+		#10
+		 a = 64'd357;
+		 b = 64'd471;
+		 c_in = 1'd1;
+
+		#10;
+		$finish();
+	end
+endmodule
